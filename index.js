@@ -43,6 +43,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 const usersCollection = client.db('summercamp').collection('users')
+const classCollection = client.db('summercamp').collection('classes')
 
 
 // users api
@@ -123,6 +124,23 @@ app.get('/user/instructor/:email',verifyJwt,async(req,res)=>{
 
 res.send(result)
 })
+
+
+// add get classes api
+
+app.post('/addclass',async(req,res)=>{
+  const body = req.body;
+  const result = await classCollection.insertOne(body)
+  res.send(result)
+})
+
+app.get('/allclasses',async(req,res)=>{
+  const result = await classCollection.find().toArray()
+  res.send(result)
+})
+
+
+
 
 
 
