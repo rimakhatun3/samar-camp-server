@@ -10,6 +10,21 @@ require('dotenv').config()
 app.use(express.json())
 app.use(cors())
 
+const verifyJwt =(req,res,next)=>{
+  const authoraization = req.headers.authoraization
+  if(!authoraization){
+    return res.status(403).send({error:true, message:"unathorization access"})
+  }
+  const token = authoraization.spilt(' ')[1]
+  jwt.verify(token,process.env.JWT_ACCESS_TOKEN,(error,decoded)=>{
+    if(error){
+      return res.status(403).send({error:true, message:"unathorization access"})
+    }
+req.decodede = decoded
+next()
+  })
+}
+
 // console.log(process.env.JWT_ACCESS_TOKEN)
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.wvicmmt.mongodb.net/?retryWrites=true&w=majority`;
