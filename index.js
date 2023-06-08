@@ -11,16 +11,16 @@ app.use(express.json())
 app.use(cors())
 
 const verifyJwt =(req,res,next)=>{
-  const authoraization = req.headers.authoraization
-  if(!authoraization){
-    return res.status(403).send({error:true, message:"unathorization access"})
+  const authorization = req.headers.authorization
+  if(!authorization){
+    return res.status(401).send({error:true, message:"unathorization access"})
   }
-  const token = authoraization.spilt(' ')[1]
+  const token = authorization.split(' ')[1]
   jwt.verify(token,process.env.JWT_ACCESS_TOKEN,(error,decoded)=>{
     if(error){
-      return res.status(403).send({error:true, message:"unathorization access"})
+      return res.status(401).send({error:true, message:"unathorization access"})
     }
-req.decodede = decoded
+req.decoded = decoded
 next()
   })
 }
@@ -83,6 +83,22 @@ const updateDoc ={
 const result = await usersCollection.updateOne(query,updateDoc)
 res.send(result)
 })
+
+// get admin
+
+app.get('/user/admin/:email',verifyJwt,async(req,res)=>{
+  const email = req.params.email
+  if(req.decoded.email!==email){
+    return  res.send({admin:false})
+    }
+  const query = {email :email}
+  const user = await usersCollection.findOne(query)
+  const result = {admin:user.role==="admin"}
+
+res.send(result)
+})
+
+
 app.patch('/alluser/instructor/:id',async(req,res)=>{
 const id = req.params.id
 const query = {_id : new ObjectId(id)}
@@ -92,6 +108,19 @@ const updateDoc ={
   }
 }
 const result = await usersCollection.updateOne(query,updateDoc)
+res.send(result)
+})
+
+// get instructor
+app.get('/user/instructor/:email',verifyJwt,async(req,res)=>{
+  const email = req.params.email
+  if(req.decoded.email!==email){
+    return  res.send({instructor:false})
+    }
+  const query = {email :email}
+  const user = await usersCollection.findOne(query)
+  const result = {instructor:user.role==="instructor"}
+
 res.send(result)
 })
 
