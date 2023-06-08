@@ -1,15 +1,16 @@
 const express = require('express');
 const app = express()
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config()
 
 app.use(express.json())
 app.use(cors())
 
+// console.log(process.env.JWT_ACCESS_TOKEN)
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.wvicmmt.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -31,6 +32,13 @@ const usersCollection = client.db('summercamp').collection('users')
 
 // users api
 
+
+app.post('/jwt',(req,res)=>{
+  const user = req.body
+  const token = jwt.sign(user, process.env.JWT_ACCESS_TOKEN,{expiresIn:'5h'})
+  res.send({token})
+})
+
 app.put('/allUser/:email',async(req,res)=>{
     const users = req.body;
     const email = req.params.email
@@ -42,6 +50,34 @@ app.put('/allUser/:email',async(req,res)=>{
 
     const result = await usersCollection.updateOne(query,updateDoc,options)
     res.send(result)
+})
+
+app.get('/allusers',async(req,res)=>{
+    const result = await usersCollection.find().toArray()
+    res.send(result)
+})
+
+app.patch('/alluser/admin/:id',async(req,res)=>{
+const id = req.params.id
+const query = {_id : new ObjectId(id)}
+const updateDoc ={
+  $set:{
+    role:"admin"
+  }
+}
+const result = await usersCollection.updateOne(query,updateDoc)
+res.send(result)
+})
+app.patch('/alluser/instructor/:id',async(req,res)=>{
+const id = req.params.id
+const query = {_id : new ObjectId(id)}
+const updateDoc ={
+  $set:{
+    role:"instructor"
+  }
+}
+const result = await usersCollection.updateOne(query,updateDoc)
+res.send(result)
 })
 
 
