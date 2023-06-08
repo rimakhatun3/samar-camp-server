@@ -44,6 +44,7 @@ async function run() {
     await client.connect();
 const usersCollection = client.db('summercamp').collection('users')
 const classCollection = client.db('summercamp').collection('classes')
+const studentCollection = client.db('summercamp').collection('student')
 
 
 // users api
@@ -159,6 +160,13 @@ app.patch('/classdeny/:id',async(req,res)=>{
     }
   }
   const result = await classCollection.updateOne(query,updateDoc)
+  res.send(result)
+})
+
+// student select classes api
+app.post('/selectedclass',async(req,res)=>{
+  const student = req.body
+  const result = await studentCollection.insertOne(student)
   res.send(result)
 })
 
