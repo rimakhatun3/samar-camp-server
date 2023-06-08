@@ -139,6 +139,29 @@ app.get('/allclasses',async(req,res)=>{
   res.send(result)
 })
 
+app.patch('/allclass/:id',async(req,res)=>{
+  const id = req.params.id
+  const query = {_id : new ObjectId(id)}
+  const updateDoc ={
+    $set:{
+      status:'approve'
+    }
+  }
+  const result = await classCollection.updateOne(query,updateDoc)
+  res.send(result)
+})
+app.patch('/classdeny/:id',async(req,res)=>{
+  const id = req.params.id
+  const query = {_id : new ObjectId(id)}
+  const updateDoc ={
+    $set:{
+      status:'denied'
+    }
+  }
+  const result = await classCollection.updateOne(query,updateDoc)
+  res.send(result)
+})
+
 
 
 
