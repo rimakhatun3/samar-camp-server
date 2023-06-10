@@ -5,6 +5,8 @@ const cors = require('cors');
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+const stripe = require("stripe")(process.env.PAYMENT_STRIPE_KEY)
+
 require('dotenv').config()
 
 app.use(express.json())
@@ -45,6 +47,7 @@ async function run() {
 const usersCollection = client.db('summercamp').collection('users')
 const classCollection = client.db('summercamp').collection('classes')
 const studentCollection = client.db('summercamp').collection('student')
+const paymentsCollection = client.db('summercamp').collection('student')
 
 
 // users api
@@ -170,9 +173,32 @@ app.post('/selectedclass',async(req,res)=>{
   res.send(result)
 })
 
+app.get('/selectclass',async(req,res)=>{
+  const result = await studentCollection.find().toArray()
+  res.send(result)
+})
 
+app.delete('/selectedclass/:id',async(req,res)=>{
+const id = req.params.id
+const query ={_id: new ObjectId(id)}
+const result = await studentCollection.deleteOne(query)
+res.send(result)
+})
 
-
+// payment apis
+app.post('/create-payment-intent',async(req,res)=>{
+ const {price} = req.body
+ const amount = parseInt(price*100)
+ const paymentIntent = await stripe.paymentIntents.create({
+  amount:amount,
+  currency: "usd",
+  payment_method_types:['card']
+  
+ })
+ res.send({
+  clientSecret:paymentIntent.client_secret
+})
+})
 
 
 
