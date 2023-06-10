@@ -141,6 +141,12 @@ app.get('/allclasses',async(req,res)=>{
   const result = await classCollection.find().toArray()
   res.send(result)
 })
+app.get('/allclasse/:id',async(req,res)=>{
+  const id = req.params.id
+  const query = {_id : new ObjectId(id)}
+  const result = await studentCollection.findOne(query)
+  res.send(result)
+})
 
 app.patch('/allclass/:id',async(req,res)=>{
   const id = req.params.id
@@ -188,7 +194,7 @@ res.send(result)
 app.post('/create-payment-intent',verifyJwt,async(req,res)=>{
  const {price} = req.body
  
- const amount = price*100
+ const amount = parseInt(price*100)
  
  const paymentIntent = await stripe.paymentIntents.create({
   amount:amount,
@@ -204,6 +210,15 @@ app.post('/create-payment-intent',verifyJwt,async(req,res)=>{
 app.post('/payment',async(req,res)=>{
   const payment = req.body
   const result = await paymentsCollection.insertOne(payment)
+  const query = {_id: new ObjectId(payment.classId) }
+  const deleteResult = await studentCollection.deleteOne(query)
+  // const seat = {seat:payment.seat}
+  // const updateResult = await classCollection.updateOne(seat)
+  res.send({result,deleteResult,updateResult})
+})
+
+app.get('/enrollclass',verifyJwt,async(req,res)=>{
+  const result = await paymentsCollection.find().toArray()
   res.send(result)
 })
 
