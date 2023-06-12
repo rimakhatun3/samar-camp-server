@@ -11,6 +11,7 @@ const stripe = require("stripe")(process.env.PAYMENT_STRIPE_KEY)
 app.use(express.json())
 app.use(cors())
 
+
 const verifyJwt =(req,res,next)=>{
   const authorization = req.headers.authorization
   if(!authorization){
@@ -42,7 +43,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 const usersCollection = client.db('summercamp').collection('users')
 const classCollection = client.db('summercamp').collection('classes')
 const studentCollection = client.db('summercamp').collection('student')
@@ -57,6 +58,27 @@ app.post('/jwt',(req,res)=>{
   const token = jwt.sign(user, process.env.JWT_ACCESS_TOKEN,{expiresIn:'5h'})
   res.send({token})
 })
+
+const verifyAdmin =async(req,res,next)=>{
+  const email = req.decoded.email
+  const query = {email:email}
+  const user = await usersCollection.findOne(query)
+  if(user.role!=="admin"){
+    return res.status(403).send({error:true,message:"forbidden message"})
+  }
+next()
+}
+
+const verifyInstructor =async(req,res,next)=>{
+  const email = req.decoded.email
+  const query = {email:email}
+  const user = await usersCollection.findOne(query)
+  if(user.role!=="instructor"){
+    return res.status(403).send({error:true,message:"forbidden message"})
+  }
+next()
+}
+
 
 app.put('/allUser/:email',async(req,res)=>{
     const users = req.body;
@@ -102,6 +124,20 @@ app.get('/user/admin/:email',verifyJwt,async(req,res)=>{
 res.send(result)
 })
 
+// // get student
+
+// app.get('/user/student/:email',verifyJwt,async(req,res)=>{
+//   const email = req.params.email
+//   if(req.decoded.email!==email){
+//     return  res.send({student:false})
+//     }
+//   const query = {email :email}
+//   const user = await usersCollection.findOne(query)
+//   const result = {student:user.role==="student"}
+
+// res.send(result)
+// })
+
 
 app.patch('/alluser/instructor/:id',async(req,res)=>{
 const id = req.params.id
@@ -141,12 +177,38 @@ app.get('/allclasses',async(req,res)=>{
   const result = await classCollection.find().toArray()
   res.send(result)
 })
+app.get('/feedbackclass/:id',async(req,res)=>{
+  const id = req.params.id
+  const query = {_id : new ObjectId(id)}
+  const result = await classCollection.findOne(query)
+
+  res.send(result)
+})
+
+
 app.get('/allclasse/:id',async(req,res)=>{
   const id = req.params.id
   const query = {_id : new ObjectId(id)}
   const result = await studentCollection.findOne(query)
   res.send(result)
 })
+
+
+
+app.patch('/feedback/:id',async(req,res)=>{
+  const id = req.params.id
+  const feedback = req.body
+  const query = {_id : new ObjectId(id)}
+  const updateDoc ={
+    $set:{
+      feedback:feedback
+    }
+  }
+  const result = await classCollection.updateOne(query,updateDoc)
+  res.send(result)
+})
+
+
 
 app.patch('/allclass/:id',async(req,res)=>{
   const id = req.params.id
@@ -159,6 +221,8 @@ app.patch('/allclass/:id',async(req,res)=>{
   const result = await classCollection.updateOne(query,updateDoc)
   res.send(result)
 })
+
+
 app.patch('/classdeny/:id',async(req,res)=>{
   const id = req.params.id
   const query = {_id : new ObjectId(id)}
@@ -172,7 +236,7 @@ app.patch('/classdeny/:id',async(req,res)=>{
 })
 
 // student select classes api
-app.post('/selectedclass',async(req,res)=>{
+app.post('/selectedclasses',async(req,res)=>{
   const student = req.body
   const result = await studentCollection.insertOne(student)
   res.send(result)
@@ -213,11 +277,11 @@ app.post('/payment',async(req,res)=>{
   const query = {_id: new ObjectId(payment.classId) }
   const deleteResult = await studentCollection.deleteOne(query)
   // const seat = {seat:payment.seat}
-  // const updateResult = await classCollection.updateOne(seat)
-  res.send({result,deleteResult,updateResult})
+  // const updateResult = await classCollection.updateOne(query) 
+  res.send({result,deleteResult})
 })
 
-app.get('/enrollclass',verifyJwt,async(req,res)=>{
+app.get('/enrollclass',async(req,res)=>{
   const result = await paymentsCollection.find().toArray()
   res.send(result)
 })
@@ -226,7 +290,7 @@ app.get('/enrollclass',verifyJwt,async(req,res)=>{
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
